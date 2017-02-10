@@ -1,6 +1,6 @@
 #practice, prepping data for sql
 library(tidyverse)
-setwd("~/Downloads")
+#setwd("~/Downloads")
 
 #read in csv file
 df <- read_csv("merged.csv")
@@ -22,4 +22,7 @@ df_reviews$Rating <- as.numeric(df_reviews$Rating)
 #clean dates
 df_reviews$Date <- as.Date(df_reviews$Date, format = "%m/%d/%y") 
 
-write_csv(df_reviews, "sql_practice_file.csv")
+#write_csv(df_reviews, "sql_practice_file.csv")
+
+#trying split
+df_split <- split(df_reviews, df_reviews$Restaurant)
