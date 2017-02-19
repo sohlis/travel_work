@@ -1,6 +1,6 @@
 #practice, prepping data for sql
 library(tidyverse)
-#setwd("~/Downloads")
+setwd("C:\Users\MarleyB\Desktop\Desktop\R")
 
 #read in csv file
 df <- read_csv("merged.csv")
