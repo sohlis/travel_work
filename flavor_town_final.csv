@@ -1,4 +1,4 @@
-"ep_number","ep_title","restaurant","location","ep_air_date","yelp_string","index","freq_visited"
+"ep_number","ep_title","restaurant","location","ep_air_date","google_string","index","freq_visited"
 1,"Classics","Mac & Ernie's","Tarpley, Texas",2007-04-23,"Mac & Ernie's Tarpley Texas yelp",1,1
 1,"Classics","Brint's Diner","Wichita, Kansas",2007-04-23,"Brint's Diner Wichita Kansas yelp",2,1
 1,"Classics","Mad Greek's Diner","Baker, California",2007-04-23,"Mad Greek's Diner Baker California yelp",3,1
