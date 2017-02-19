@@ -1,4 +1,5 @@
 #Connect the data from the wiki scraper to the yelp urls. This is an intermediate step to eventually merging all the data together
+#Create final data frame that houses all data from DDD
 library(tidyverse)
 library(data.table)
 #setwd()
@@ -50,8 +51,6 @@ reviews$review_date <- as.Date(reviews$review_date, format = "%m/%d/%y")
 fieri <- merge(reviews, ftown, by = "yelp_string")
 
 #write csv file containing final fieri data set
-<<<<<<< HEAD
 #write.csv(fieri, "fieri_data_complete.csv", row.names = FALSE)
-=======
-#write.csv("fieri_data_complete.csv", row.names = FALSE)
->>>>>>> 4b9bcac9db2092af0c4f6af052a7fccf4fdd6f34
+
+
