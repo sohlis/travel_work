@@ -94,7 +94,7 @@ data.for.url.scraper <- as.data.frame(data.for.url.scraper)
 flavor.town <- cbind(flavor.town, data.for.url.scraper)
 
 #create an index variable for the data frame
-index <- c(1:969)
+index <- c(1:880)
 flavor.town <- cbind(flavor.town, index)
 
 #clean up the column names
@@ -127,17 +127,29 @@ flavor.town <- left_join(flavor.town, n.occur.string, by = "google_string")
 flavor.town$google_string <- gsub("Ã©", "e", flavor.town$google_string)
 flavor.town$google_string <- gsub("â€™", "'", flavor.town$google_string)
 flavor.town$google_string <- gsub("â€“", "", flavor.town$google_string)
+flavor.town$google_string <- gsub("â€˜", "'", flavor.town$google_string)
 
 flavor.town$restaurant <- gsub("Ã©", "e", flavor.town$restaurant)
 flavor.town$restaurant <- gsub("â€™", "'", flavor.town$restaurant)
 flavor.town$restaurant <- gsub("â€“", "", flavor.town$restaurant)
+flavor.town$restaurant <- gsub("â€˜", "'", flavor.town$restaurant)
+
 
 #Noting issue with multiple restaurants: There are some restaurants we can see that he has been to twice
 #and one restaurant that he visited three times. However, some of restaurant names and yelp string names
 #have slight misspellings or differences due to special characters. Thus, some restaurants he has visted
 #potentially twice but we aren't capturing it in below commented out code. 
 
-#write a csv file for all the data frame
-write.csv(flavor.town, file = "flavor_town_final.csv", row.names = FALSE)
+#remove duplicates to make sure the merge works correctly 
+flavor.town <- flavor.town[!duplicated(flavor.town$google_string), ]
 
-#write.csv(flavor.town$google_string, file = "google_string.csv", row.names = FALSE)
+#create an index variable for the data frame
+index <- c(1:880)
+flavor.town <- cbind(flavor.town, index)
+
+#write a csv file for all the data frame
+#write.csv(flavor.town, file = "flavor_town_final.csv", row.names = FALSE)
+
+
+
+
