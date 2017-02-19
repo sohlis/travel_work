@@ -101,7 +101,7 @@ flavor.town <- cbind(flavor.town, index)
 colnames(flavor.town)[colnames(flavor.town) == "Episode"] <- "ep_number"
 colnames(flavor.town)[colnames(flavor.town) == "Title"] <- "ep_title"
 colnames(flavor.town)[colnames(flavor.town) == "Original Air Date"] <- "ep_air_date"
-colnames(flavor.town)[colnames(flavor.town) == "data.for.url.scraper"] <- "yelp_string"
+colnames(flavor.town)[colnames(flavor.town) == "data.for.url.scraper"] <- "google_string"
 colnames(flavor.town)[colnames(flavor.town) == "Restaurant"] <- "restaurant"
 colnames(flavor.town)[colnames(flavor.town) == "Location"] <- "location"
 
@@ -112,16 +112,25 @@ flavor.town$ep_air_date <- as.Date(flavor.town$ep_air_date, format = "%B %d, %Y"
 flavor.town[is.na(flavor.town$ep_air_date), "ep_air_date"] <- "2009-02-09"
 
 #convert yelp string to character variable
-flavor.town$yelp_string <- as.character(flavor.town$yelp_string)
+flavor.town$google_string <- as.character(flavor.town$google_string)
 
 #Identify any restaurants Guy has hit multiple times
-n.occur.string <- data.frame(table(flavor.town$yelp_string))
+n.occur.string <- data.frame(table(flavor.town$google_string))
 n.occur.restaurant <- data.frame(table(flavor.town$restaurant))
 
-colnames(n.occur.string)[colnames(n.occur.string) == "Var1"] <- "yelp_string"
+colnames(n.occur.string)[colnames(n.occur.string) == "Var1"] <- "google_string"
 colnames(n.occur.string)[colnames(n.occur.string) == "Freq"] <- "freq_visited"
 
-flavor.town <- left_join(flavor.town, n.occur.string, by = "yelp_string")
+flavor.town <- left_join(flavor.town, n.occur.string, by = "google_string")
+
+#Fix troublesome terms in google_string and restuarant columns
+flavor.town$google_string <- gsub("Ã©", "e", flavor.town$google_string)
+flavor.town$google_string <- gsub("â€™", "'", flavor.town$google_string)
+flavor.town$google_string <- gsub("â€“", "", flavor.town$google_string)
+
+flavor.town$restaurant <- gsub("Ã©", "e", flavor.town$restaurant)
+flavor.town$restaurant <- gsub("â€™", "'", flavor.town$restaurant)
+flavor.town$restaurant <- gsub("â€“", "", flavor.town$restaurant)
 
 #Noting issue with multiple restaurants: There are some restaurants we can see that he has been to twice
 #and one restaurant that he visited three times. However, some of restaurant names and yelp string names
@@ -130,3 +139,5 @@ flavor.town <- left_join(flavor.town, n.occur.string, by = "yelp_string")
 
 #write a csv file for all the data frame
 write.csv(flavor.town, file = "flavor_town_final.csv", row.names = FALSE)
+
+#write.csv(flavor.town$google_string, file = "google_string.csv", row.names = FALSE)
