@@ -50,6 +50,10 @@ reviews$review_date <- as.Date(reviews$review_date, format = "%m/%d/%y")
 #Merge ftown data set with reviews data set
 fieri <- merge(reviews, ftown, by = "yelp_string")
 
+#create a variable that indicates whether a review is before or after episode air date (divide obs into control and treatment)
+fieri$group <- ifelse(fieri$review_date >= fieri$ep_air_date, "AFTER", "BEFORE")
+fieri$group <- as.factor(fieri$group)
+
 #write csv file containing final fieri data set
 #write.csv(fieri, "fieri_data_complete.csv", row.names = FALSE)
 
