@@ -8,49 +8,25 @@ library(plyr)
 #read in csv file containing all Fieri flavor data
 fieri <- read_csv("fieri_data_complete.csv")
 
-#create columns to be used in for loop
-fieri$after <- 0
-fieri$before <- 0
-fieri$effect <- 0
+#create before and after group
+fieri$group <- ifelse(fieri$review_date <= fieri$ep_air_date, "BEFORE", "AFTER")
 
-#split data by yelp_string
-fieri_split <- split(fieri, fieri$yelp_string)
+#group by reviews before air date and take mean
+before_test <- fieri %>% 
+  filter(group == "BEFORE") %>% 
+  group_by(index) %>%
+  summarise_each(funs(mean), rating)
 
-#ddply(x, ~group, summarise, mean = mean(rating))
-d <- filter(fieri, index == 340)
-View(d)
+colnames(before_test)[colnames(before_test) == "rating"] <- "avg_rating_before"
 
-counter <- 1
-
-for(df in 1:length(fieri_split)){
-  for (i in df){
-    
-    df$after[counter] <- NA
-    df$before[counter] <- NA
-    if (i == "AFTER")
-    {
-      df$after[counter] <- df$rating[counter]
-    }
+#group by reviews after air date and take mean
+after_test <- fieri %>% 
+  filter(group == "AFTER") %>% 
+  group_by(index) %>%
+  summarise_each(funs(mean), rating)  
   
-    else if (i == "BEFORE")
-    {
-      df$before[counter] <- df$rating[counter]
-    }
-    
-  counter <- counter + 1
+colnames(after_test)[colnames(after_test) == "rating"] <- "avg_rating_after"
 
-  }
-  df$effect <- (mean(df$after, na.rm = TRUE) - mean(df$before, na.rm = TRUE)) / mean(df$before, na.rm = TRUE)
-  
-}
-
-length(fieri_split[[1]])
-str(fieri_split[1])
-
-fieri$Restaurant <- as.factor(fieri$Restaurant)
-q <- fieri %>% 
-  group_by(Restaurant) %>% 
-  group_by(group) %>% 
-  summarise(after = mean(group))
-
-class(fieri$rating)
+#join before and after sets together
+effect_test <- left_join(before_test, after_test, by = "index")
+View(effect_test)
