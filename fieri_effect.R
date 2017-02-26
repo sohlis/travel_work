@@ -145,7 +145,7 @@ flavor.town$restaurant <- gsub("â€˜", "'", flavor.town$restaurant)
 flavor.town <- flavor.town[!duplicated(flavor.town$google_string), ]
 
 #create an index variable for the data frame
-index <- c(1:879)
+index <- c(1:902)
 flavor.town <- cbind(flavor.town, index)
 
 #write a csv file for all the data frame
@@ -207,29 +207,34 @@ fieri$group <- ifelse(fieri$review_date <= fieri$ep_air_date, "BEFORE", "AFTER")
 #write csv file containing final fieri data set
 #write.csv(fieri, "fieri_data_complete.csv", row.names = FALSE)
 
-#group by reviews before air date and take mean
-before_test <- fieri %>% 
-  filter(group == "BEFORE") %>% 
-  group_by(index) %>%
-  summarise_each(funs(mean), rating)
+# #group by reviews before air date and take mean
+# before_test <- fieri %>% 
+#   filter(group == "BEFORE") %>% 
+#   group_by(index) %>%
+#   summarise_each(funs(mean), rating)
+# 
+# colnames(before_test)[colnames(before_test) == "rating"] <- "avg_rating_before"
+# 
+# #group by reviews after air date and take mean
+# after_test <- fieri %>% 
+#   filter(group == "AFTER") %>% 
+#   group_by(index) %>%
+#   summarise_each(funs(mean), rating)  
+# 
+# colnames(after_test)[colnames(after_test) == "rating"] <- "avg_rating_after"
+# 
+# #join before and after sets together
+# effect_test <- left_join(before_test, after_test, by = "index")
+# 
+# #calculate change in means before and after episode air date
+# effect_test <- effect_test %>% 
+#   mutate(score_change = avg_rating_after - avg_rating_before) %>% 
+#   mutate(pct_score_change = (score_change / avg_rating_before) * 100)
 
-colnames(before_test)[colnames(before_test) == "rating"] <- "avg_rating_before"
+#break out data frame into groups of individual restaurants, before and after ep air date
+grouped <- group_by(fieri, index, group)
+fieri_grouped <- summarise(grouped, mean=mean(rating), sd=sd(rating))
 
-#group by reviews after air date and take mean
-after_test <- fieri %>% 
-  filter(group == "AFTER") %>% 
-  group_by(index) %>%
-  summarise_each(funs(mean), rating)  
-
-colnames(after_test)[colnames(after_test) == "rating"] <- "avg_rating_after"
-
-#join before and after sets together
-effect_test <- left_join(before_test, after_test, by = "index")
-
-#calculate change in means before and after episode air date
-effect_test <- effect_test %>% 
-  mutate(score_change = avg_rating_after - avg_rating_before) %>% 
-  mutate(pct_score_change = (score_change / avg_rating_before) * 100)
-
-
+#merge data grouped data with main data set to add group means and sd
+fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
 
