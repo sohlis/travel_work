@@ -145,7 +145,8 @@ flavor.town$restaurant <- gsub("â€˜", "'", flavor.town$restaurant)
 flavor.town <- flavor.town[!duplicated(flavor.town$google_string), ]
 
 #create an index variable for the data frame
-index <- c(1:902)
+#index <- c(1:902)
+index <- c(1:879)
 flavor.town <- cbind(flavor.town, index)
 
 #write a csv file for all the data frame
@@ -233,7 +234,7 @@ fieri$group <- ifelse(fieri$review_date <= fieri$ep_air_date, "BEFORE", "AFTER")
 
 #break out data frame into groups of individual restaurants, before and after ep air date
 grouped <- group_by(fieri, index, group)
-fieri_grouped <- summarise(grouped, mean=mean(rating), sd=sd(rating))
+fieri_grouped <- summarise(grouped, mean = mean(rating), sd = sd(rating), n = n())
 
 #merge data grouped data with main data set to add group means and sd
 fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
