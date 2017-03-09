@@ -1,8 +1,9 @@
 #Scraping list of restaurant names from DDD's wikipedia page
+library(plyr)
 library(htmltab)
-library(dplyr)
 library(data.table)
 library(tidyverse)
+
 
 url <- "https://en.wikipedia.org/wiki/List_of_Diners,_Drive-Ins,_and_Dives_episodes"
 
@@ -145,8 +146,8 @@ flavor.town$restaurant <- gsub("â€˜", "'", flavor.town$restaurant)
 flavor.town <- flavor.town[!duplicated(flavor.town$google_string), ]
 
 #create an index variable for the data frame
-#index <- c(1:902)
-index <- c(1:879)
+index <- c(1:902) # for mac ?
+#index <- c(1:879) # for windows ?
 flavor.town <- cbind(flavor.town, index)
 
 #write a csv file for all the data frame
@@ -238,4 +239,23 @@ fieri_grouped <- summarise(grouped, mean = mean(rating), sd = sd(rating), n = n(
 
 #merge data grouped data with main data set to add group means and sd
 fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
+
+#write_csv(fieri, "fieri_mac_march.csv")
+#fieri <- read_csv("fieri_mac_march.csv")
+
+#create a new data frame of summary statistics
+fieri$group <- as.factor(fieri$group)
+
+fieri_summary <- fieri %>% 
+        group_by(index, group) %>% 
+        summarise(rating_mean = mean(rating), rating_sd = sd(rating), rating_n = n())
+        
+#add episode air date data to summary df
+to_be_merged <- fieri %>% select(index, ep_air_date)
+to_be_merged <- to_be_merged[!duplicated(to_be_merged), ]
+
+fieri_summary <- merge(fieri_summary, to_be_merged, by = "index")
+
+#create a subset of the summary data that only includes restaurants which have reviews before AND after episode air date
+
 
