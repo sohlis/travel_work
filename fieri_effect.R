@@ -4,7 +4,6 @@ library(htmltab)
 library(data.table)
 library(tidyverse)
 
-
 url <- "https://en.wikipedia.org/wiki/List_of_Diners,_Drive-Ins,_and_Dives_episodes"
 
 #Need to find way to condense this code to one line
@@ -257,5 +256,44 @@ to_be_merged <- to_be_merged[!duplicated(to_be_merged), ]
 fieri_summary <- merge(fieri_summary, to_be_merged, by = "index")
 
 #create a subset of the summary data that only includes restaurants which have reviews before AND after episode air date
+fieri_summary_duplicate <- fieri_summary[duplicated(fieri_summary$index), ]
+fieri_summary_duplicate <- fieri_summary_duplicate$index
 
+fieri_before_after <- fieri_summary[fieri_summary$index %in% fieri_summary_duplicate, ]
 
+#create separate data sets for before observations and after observations, then merge later for simplicity
+fieri_before_obs <- filter(fieri_before_after, group == "BEFORE")
+fieri_after_obs <- filter(fieri_before_after, group == "AFTER")
+
+fieri_before_obs <- fieri_before_obs %>% 
+        rename(avg_before_obs_rating = rating_mean,
+               sd_before_obs = rating_sd,
+                n_before_obs = rating_n,
+               before_group = group)
+
+fieri_after_obs <- fieri_after_obs %>% 
+        rename(avg_after_obs_rating = rating_mean,
+               sd_after_obs = rating_sd,
+               n_after_obs = rating_n,
+               after_group = group)
+
+fieri_paired <- left_join(fieri_before_obs, fieri_after_obs, by = "index")
+
+#create values for differences betwen average values
+fieri_paired <- fieri_paired %>% 
+        mutate(avg_rating_change = avg_after_obs_rating - avg_before_obs_rating,
+               avg_rating_change_pct = ((avg_after_obs_rating - avg_before_obs_rating) / avg_before_obs_rating) * 100,
+               nafter_sub_nbefore = n_before_obs - n_after_obs,
+               nafter_sub_nbefore_pct = ((n_before_obs - n_after_obs) / n_before_obs) * 100)
+
+##Now that all the information needed for begining visual analysis is in one data frame, start visualizing data
+#and finding relevant thresholds to use for sample size
+hist(fieri_paired$nafter_sub_nbefore)
+hist(fieri_paired$nafter_sub_nbefore_pct)
+
+#initial scatter plot looking at overall trend, restaurant vs. fieri effect
+gg_fieri <- ggplot(data = fieri_paired, aes(x = index, y = avg_rating_change)) + 
+        geom_point() +
+        geom_smooth(method = "lm") +
+        geom_hline(yintercept = 0)
+gg_fieri
