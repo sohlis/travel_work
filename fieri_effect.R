@@ -155,7 +155,6 @@ flavor.town <- cbind(flavor.town, index)
 #####Connect the data from the wiki scraper to the yelp urls. This is an intermediate step to eventually merging all the data together
 #####Create final data frame that houses all data from DDD
 
-
 #read in csv file with restaurant names and urls
 names.url <- read_csv("names_with_url.csv")
 
@@ -208,36 +207,19 @@ fieri$group <- ifelse(fieri$review_date <= fieri$ep_air_date, "BEFORE", "AFTER")
 #write csv file containing final fieri data set
 #write.csv(fieri, "fieri_data_complete.csv", row.names = FALSE)
 
-# #group by reviews before air date and take mean
-# before_test <- fieri %>% 
-#   filter(group == "BEFORE") %>% 
-#   group_by(index) %>%
-#   summarise_each(funs(mean), rating)
-# 
-# colnames(before_test)[colnames(before_test) == "rating"] <- "avg_rating_before"
-# 
-# #group by reviews after air date and take mean
-# after_test <- fieri %>% 
-#   filter(group == "AFTER") %>% 
-#   group_by(index) %>%
-#   summarise_each(funs(mean), rating)  
-# 
-# colnames(after_test)[colnames(after_test) == "rating"] <- "avg_rating_after"
-# 
-# #join before and after sets together
-# effect_test <- left_join(before_test, after_test, by = "index")
-# 
-# #calculate change in means before and after episode air date
-# effect_test <- effect_test %>% 
-#   mutate(score_change = avg_rating_after - avg_rating_before) %>% 
-#   mutate(pct_score_change = (score_change / avg_rating_before) * 100)
-
 #break out data frame into groups of individual restaurants, before and after ep air date
 grouped <- group_by(fieri, index, group)
 fieri_grouped <- summarise(grouped, mean = mean(rating), sd = sd(rating), n = n())
 
 #merge data grouped data with main data set to add group means and sd
 fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
+
+#Do some feature engineering to break out city and state variables
+fieri <- separate(fieri, location, into = c("city", "state"), sep = ",", remove = FALSE)
+
+#note that the states below are missing from Data Set:
+#Arkansas, Delaware, Montana, North Dakota, South Dakota, Vermont
+#Foreign locations included: Ontario, Mexico, Italy, London, British Columbia, UK
 
 #write_csv(fieri, "fieri_mac_march.csv")
 #fieri <- read_csv("fieri_mac_march.csv")
@@ -288,12 +270,58 @@ fieri_paired <- fieri_paired %>%
 
 ##Now that all the information needed for begining visual analysis is in one data frame, start visualizing data
 #and finding relevant thresholds to use for sample size
-hist(fieri_paired$nafter_sub_nbefore)
-hist(fieri_paired$nafter_sub_nbefore_pct)
+
+#for convenience create new data frame with shorter name to work with "df"
+df <- fieri_paired
+
+#run a t-test to see if there is statistically significant differences between means
+t.test(df$avg_before_obs_rating, df$avg_after_obs_rating, mu = 0)
+
+#Histograms of before and after group observation frequencies 
+hist(df$n_before_obs)
+hist(df$n_after_obs)
+
+qplot(index, n_before_obs, data = df)
+qplot(index, n_after_obs, data = df)
+qplot(n_before_obs, n_after_obs, data = df)
+
+hist(df$nafter_sub_nbefore)
+hist(df$nafter_sub_nbefore_pct)
+
+summary(df$n_before_obs)
+summary(df$n_after_obs)
+summary(df$nafter_sub_nbefore)
+
+#create a new data frame that only contains restaurants that have at least 30 reviews before and after episode air date
+df30 <- filter(df, n_before_obs > 30 & n_after_obs > 30)
+
+qplot(n_before_obs, n_after_obs, data = df30)
+qplot(index, nafter_sub_nbefore, data = df30)
+
+summary(df30$nafter_sub_nbefore)
+
+#the restaurants featured earliest have the largest discrepency in sample size between groups so I 
+#will make an adjustment to keep the data set more balanced. I will remove restaurants where the difference
+#between observations after the episode air date and before epsiode air date is less than -2000. This
+#will remove some of the restaurants that were reviewed earliest (potential introducing recency bias in results)
+
+df_cleaned <- filter(df30, nafter_sub_nbefore >= -2000)
+qplot(index, nafter_sub_nbefore, data = df_cleaned)
+
+#t test for sigfnificant difference in means with this trimmed data set
+t.test(df_cleaned$avg_before_obs_rating, df_cleaned$avg_after_obs_rating, mu = 0)
 
 #initial scatter plot looking at overall trend, restaurant vs. fieri effect
-gg_fieri <- ggplot(data = fieri_paired, aes(x = index, y = avg_rating_change)) + 
+gg_fieri <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
         geom_point() +
-        geom_smooth(method = "lm") +
-        geom_hline(yintercept = 0)
-gg_fieri
+        stat_smooth(method = "lm") +
+        geom_hline(aes(yintercept = 0)) +
+        geom_hline(aes(yintercept = mean(avg_rating_change)))
+
+#same visualization but in percentages terms
+gg_fieri_pct <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
+        geom_point() +
+        stat_smooth(method = "lm") +
+        geom_hline(aes(yintercept = 0)) +
+        geom_hline(aes(yintercept = mean(avg_rating_change_pct)))
+gg_fieri_pct
