@@ -311,6 +311,14 @@ qplot(index, nafter_sub_nbefore, data = df_cleaned)
 #t test for sigfnificant difference in means with this trimmed data set
 t.test(df_cleaned$avg_before_obs_rating, df_cleaned$avg_after_obs_rating, mu = 0)
 
+#merge some additional features/variables for visualization
+location_restaurant <- select(fieri, index, restaurant, city, state)
+indexes_to_merge <- select(df_cleaned, index)
+location_restaurant <- unique(location_restaurant)
+location_restaurant <- location_restaurant[location_restaurant$index %in% indexes_to_merge$index, ]
+
+df_cleaned <- merge(df_cleaned, location_restaurant, by = "index")
+
 #initial scatter plot looking at overall trend, restaurant vs. fieri effect
 gg_fieri <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
         geom_point() +
@@ -325,3 +333,9 @@ gg_fieri_pct <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_
         geom_hline(aes(yintercept = 0)) +
         geom_hline(aes(yintercept = mean(avg_rating_change_pct)))
 gg_fieri_pct
+
+#decompose effect by state
+gg_fieri_state <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
+        geom_point() +
+        facet_grid(. ~ state)
+gg_fieri_state        
