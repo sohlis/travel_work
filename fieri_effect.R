@@ -1,8 +1,10 @@
 #Scraping list of restaurant names from DDD's wikipedia page
-library(plyr)
-library(htmltab)
-library(data.table)
-library(tidyverse)
+# library(htmltab)
+# library(data.table)
+# library(tidyverse) #can't figure out why these fail
+library(dplyr)
+library(readr)
+library(ggplot2) #these work for continuing
 
 url <- "https://en.wikipedia.org/wiki/List_of_Diners,_Drive-Ins,_and_Dives_episodes"
 
@@ -93,10 +95,6 @@ data.for.url.scraper <- as.data.frame(data.for.url.scraper)
 
 #merge the two data sets to maintain all the data in one dataframe
 flavor.town <- cbind(flavor.town, data.for.url.scraper)
-
-#create an index variable for the data frame
-#index <- c(1:880)
-#flavor.town <- cbind(flavor.town, index)
 
 #clean up the column names
 colnames(flavor.town)[colnames(flavor.town) == "Episode"] <- "ep_number"
@@ -217,6 +215,18 @@ fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
 #Do some feature engineering to break out city and state variables
 fieri <- separate(fieri, location, into = c("city", "state"), sep = ",", remove = FALSE)
 
+#use state variables to create new variables for U.S. regions
+fieri$region <- "Other"
+fieri[fieri$state %in% c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont"), "region"] <- "Northeast"
+fieri[fieri$state %in% c("New Jersey", "New York", "Pennsylvania"), "region"] <- "Mid-Atlantic"
+fieri[fieri$state %in% c("Illinois", "Indiana", "Michigan", "Ohio", "region"), "region"] <- "East North Central" 
+fieri[fieri$state %in% c("Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota"), "region"] <- "West North Central"
+fieri[fieri$state %in% c("Delaware", "Florida", "Georgia", "Maryland", "North Carolina", "South Carolina", "Virginia", "DC", "West Virginia"), "region"] <- "South Atlantic"
+fieri[fieri$state %in% c("Alabama", "Kentucky", "Mississippi", "Tennessee"), "region"] <- "East South Central"
+fieri[fieri$state %in% c("Arkansas", "Louisiana", "Oklahoma", "Texas"), "region"] <- "West South Central"
+fieri[fieri$state %in% c("Arizona", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Utah", "Wyoming"), "region"] <- "Mountain"
+fieri[fieri$state %in% c("Alaska", "California", "Hawaii", "Oregon", "Washington"), "region"] <- "Pacific"
+
 #note that the states below are missing from Data Set:
 #Arkansas, Delaware, Montana, North Dakota, South Dakota, Vermont
 #Foreign locations included: Ontario, Mexico, Italy, London, British Columbia, UK
@@ -312,7 +322,7 @@ qplot(index, nafter_sub_nbefore, data = df_cleaned)
 t.test(df_cleaned$avg_before_obs_rating, df_cleaned$avg_after_obs_rating, mu = 0)
 
 #merge some additional features/variables for visualization
-location_restaurant <- select(fieri, index, restaurant, city, state)
+location_restaurant <- select(fieri, index, restaurant, city, state, region)
 indexes_to_merge <- select(df_cleaned, index)
 location_restaurant <- unique(location_restaurant)
 location_restaurant <- location_restaurant[location_restaurant$index %in% indexes_to_merge$index, ]
@@ -325,6 +335,7 @@ gg_fieri <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_chan
         stat_smooth(method = "lm") +
         geom_hline(aes(yintercept = 0)) +
         geom_hline(aes(yintercept = mean(avg_rating_change)))
+gg_fieri
 
 #same visualization but in percentages terms
 gg_fieri_pct <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
@@ -334,8 +345,10 @@ gg_fieri_pct <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_
         geom_hline(aes(yintercept = mean(avg_rating_change_pct)))
 gg_fieri_pct
 
-#decompose effect by state
-gg_fieri_state <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
+#decompose effect by region and state
+gg_fieri_state <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
         geom_point() +
-        facet_grid(. ~ state)
+        facet_grid(. ~ region)
 gg_fieri_state        
+
+###need to create new variable for each year, and decompose effect by year
