@@ -363,5 +363,17 @@ gg_fieri_state
 gg_fieri_year <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
   geom_point() +
   facet_grid(. ~ ep_year)
-gg_fieri_year   
+gg_fieri_year  
+
+#cleaner visualization of fieri effect
+gg_polished <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
+  geom_point(aes(color = region)) +
+  ggtitle("Average Change in Retaurant's Rating after the Air Date of Diners, Drive-Ins, and Dives Episode") +
+  xlab("Original Air Date of DDD Episode") +
+  ylab("Average Change in Restaurant's Yelp Rating") +
+  geom_hline(aes(yintercept = 0), color = "black", size = 0.5) + 
+  geom_smooth(se = FALSE, color = "black", size = 0.5) +
+  geom_hline(aes(yintercept = mean(avg_rating_change)), linetype = 2, size = 0.75)
+gg_polished
+
 
