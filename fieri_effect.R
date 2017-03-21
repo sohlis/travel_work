@@ -231,8 +231,16 @@ fieri[fieri$state %in% c("Alaska", "California", "Hawaii", "Oregon", "Washington
 #Arkansas, Delaware, Montana, North Dakota, South Dakota, Vermont
 #Foreign locations included: Ontario, Mexico, Italy, London, British Columbia, UK
 
+#need to create new variable for each year to further breakout trend of the effect
+fieri$ep_year <- format(fieri$ep_air_date, '%Y')
+fieri$review_year <- format(fieri$review_date, '%Y')
+
+
 #write_csv(fieri, "fieri_mac_march.csv")
 #fieri <- read_csv("fieri_mac_march.csv")
+
+#write_csv(fieri, "fieri_march.csv")
+#fieri <- read_csv("fieri_march.csv")
 
 #create a new data frame of summary statistics
 fieri$group <- as.factor(fieri$group)
@@ -322,7 +330,7 @@ qplot(index, nafter_sub_nbefore, data = df_cleaned)
 t.test(df_cleaned$avg_before_obs_rating, df_cleaned$avg_after_obs_rating, mu = 0)
 
 #merge some additional features/variables for visualization
-location_restaurant <- select(fieri, index, restaurant, city, state, region)
+location_restaurant <- select(fieri, index, restaurant, city, state, region, ep_year)
 indexes_to_merge <- select(df_cleaned, index)
 location_restaurant <- unique(location_restaurant)
 location_restaurant <- location_restaurant[location_restaurant$index %in% indexes_to_merge$index, ]
@@ -351,4 +359,9 @@ gg_fieri_state <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_ratin
         facet_grid(. ~ region)
 gg_fieri_state        
 
-###need to create new variable for each year, and decompose effect by year
+#breakout effect by year
+gg_fieri_year <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
+  geom_point() +
+  facet_grid(. ~ ep_year)
+gg_fieri_year   
+
