@@ -376,4 +376,10 @@ gg_polished <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_c
   geom_hline(aes(yintercept = mean(avg_rating_change)), linetype = 2, size = 0.75)
 gg_polished
 
+#Create plots that looks at fieri effect by state, and also plots by year 
+#Find way to automate the generation of all these plots & then connect them together via Shiny
+#Then add plots that look at the fieri effect by restaurant tags
+#Get zip codes or coordinates to make geospatial plot
+#Start sentiment analysis
+
 
