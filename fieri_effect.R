@@ -1,10 +1,7 @@
 #Scraping list of restaurant names from DDD's wikipedia page
-# library(htmltab)
-# library(data.table)
-# library(tidyverse) #can't figure out why these fail
-library(dplyr)
-library(readr)
-library(ggplot2) #these work for continuing
+library(htmltab)
+library(data.table)
+library(tidyverse)
 
 url <- "https://en.wikipedia.org/wiki/List_of_Diners,_Drive-Ins,_and_Dives_episodes"
 
