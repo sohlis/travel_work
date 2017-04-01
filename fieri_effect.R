@@ -2,6 +2,7 @@
 library(htmltab)
 library(data.table)
 library(tidyverse)
+library(ggmap)
 
 url <- "https://en.wikipedia.org/wiki/List_of_Diners,_Drive-Ins,_and_Dives_episodes"
 
@@ -212,6 +213,10 @@ fieri <- merge(fieri, fieri_grouped, by = c("index", "group"))
 #Do some feature engineering to break out city and state variables
 fieri <- separate(fieri, location, into = c("city", "state"), sep = ",", remove = FALSE)
 
+#trim leading white space from state variable
+trim.leading <- function (x)  sub("^\\s+", "", x)
+fieri$state <- trim.leading(fieri$state)
+
 #use state variables to create new variables for U.S. regions
 fieri$region <- "Other"
 fieri[fieri$state %in% c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont"), "region"] <- "Northeast"
@@ -233,11 +238,31 @@ fieri$ep_year <- format(fieri$ep_air_date, '%Y')
 fieri$review_year <- format(fieri$review_date, '%Y')
 
 
+
+
+
+#Read in data for zipcodes as well as primary tag for restaurant
+zip_and_tags_data <- read.csv('info_for_competitorsearch.csv', header = FALSE, stringsAsFactors = FALSE)
+
+#Rename columns
+zip_and_tags_data <- rename(zip_and_tags_data, Restaurant = V1, zip_code = V2, yelp_tag = V3)
+
+#Visualize most common tags
+tag_count <- count(zip_and_tags_data, yelp_tag)
+summary(tag_count)
+
+tag_count_vis <- tag_count %>% 
+        filter(n >= 15) %>% 
+        ggplot(aes(x = yelp_tag, y = n)) + 
+        geom_bar(stat = 'identity') +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+tag_count_vis
+
+#Join zip code and tags data frame with main fieri data frame 
+fieri <- left_join(fieri, zip_and_tags_data, by = "Restaurant")
+
 #write_csv(fieri, "fieri_mac_march.csv")
 #fieri <- read_csv("fieri_mac_march.csv")
-
-#write_csv(fieri, "fieri_march.csv")
-#fieri <- read_csv("fieri_march.csv")
 
 #create a new data frame of summary statistics
 fieri$group <- as.factor(fieri$group)
@@ -245,7 +270,7 @@ fieri$group <- as.factor(fieri$group)
 fieri_summary <- fieri %>% 
         group_by(index, group) %>% 
         summarise(rating_mean = mean(rating), rating_sd = sd(rating), rating_n = n())
-        
+
 #add episode air date data to summary df
 to_be_merged <- fieri %>% select(index, ep_air_date)
 to_be_merged <- to_be_merged[!duplicated(to_be_merged), ]
@@ -265,7 +290,7 @@ fieri_after_obs <- filter(fieri_before_after, group == "AFTER")
 fieri_before_obs <- fieri_before_obs %>% 
         rename(avg_before_obs_rating = rating_mean,
                sd_before_obs = rating_sd,
-                n_before_obs = rating_n,
+               n_before_obs = rating_n,
                before_group = group)
 
 fieri_after_obs <- fieri_after_obs %>% 
@@ -358,25 +383,24 @@ gg_fieri_state
 
 #breakout effect by year
 gg_fieri_year <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change_pct)) + 
-  geom_point() +
-  facet_grid(. ~ ep_year)
-gg_fieri_year  
+        geom_point() +
+        facet_grid(. ~ ep_year)
+gg_fieri_year
 
 #cleaner visualization of fieri effect
-gg_polished <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) + 
-  geom_point(aes(color = region)) +
-  ggtitle("Average Change in Retaurant's Rating after the Air Date of Diners, Drive-Ins, and Dives Episode") +
-  xlab("Original Air Date of DDD Episode") +
-  ylab("Average Change in Restaurant's Yelp Rating") +
-  geom_hline(aes(yintercept = 0), color = "black", size = 0.5) + 
-  geom_smooth(se = FALSE, color = "black", size = 0.5) +
-  geom_hline(aes(yintercept = mean(avg_rating_change)), linetype = 2, size = 0.75)
+gg_polished <- ggplot(data = df_cleaned, aes(x = ep_air_date.x, y = avg_rating_change)) +
+        geom_point(aes(color = region)) +
+        ggtitle("Average Fieri Effect") +
+        xlab("Original Air Date of DDD Episode") +
+        ylab("Average Change in Restaurant's Yelp Rating") +
+        geom_hline(aes(yintercept = 0), color = "black", size = 0.5) +
+        geom_smooth(se = FALSE, color = "black", size = 0.5) +
+        geom_hline(aes(yintercept = mean(avg_rating_change)), linetype = 2, size = 0.75)
 gg_polished
 
 #Create plots that looks at fieri effect by state, and also plots by year 
 #Find way to automate the generation of all these plots & then connect them together via Shiny
 #Then add plots that look at the fieri effect by restaurant tags
-#Get zip codes or coordinates to make geospatial plot
-#Start sentiment analysis
+#Make geospatial plot
 
-
+        
