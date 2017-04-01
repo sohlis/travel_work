@@ -72,3 +72,58 @@ tidy_reviews_sentiment
 ggplot(tidy_reviews_sentiment, aes(rating, sentiment, group = rating)) + 
         geom_boxplot() +
         ylab("Average Sentiment Score")
+
+#Create a per word summary
+tidy_reviews_counted <- tidy_reviews %>% 
+        count(review_date, restaurant, rating, word) %>% 
+        ungroup()
+tidy_reviews_counted
+
+word_summaries <- tidy_reviews_counted %>%
+        group_by(word) %>% 
+        summarize(reviews = n(), uses = sum(n), average_stars = mean(rating)) %>% 
+        ungroup()
+
+word_summaries_filtered <- word_summaries %>% 
+        filter(reviews >= 5)
+
+#Look at most positive words and negative words
+word_summaries_filtered %>% arrange((average_stars))
+word_summaries_filtered %>% arrange(desc(average_stars))
+
+#Visualize word summary
+ggplot(word_summaries_filtered, aes(reviews, average_stars)) +
+        geom_point() +
+        geom_text(aes(label = word), check_overlap = TRUE, vjust = 1, hjust = 1) +
+        scale_x_log10() +
+        geom_hline(yintercept = mean(tidy_reviews$rating), color = "red", linetype = 2) +
+        xlab("Number of Reviews") +
+        ylab("Average Rating")
+
+#Sentiment Analysis of Word Summary
+words_afinn <- word_summaries_filtered %>% 
+        inner_join(AFINN)
+
+ggplot(words_afinn, aes(afinn_score, average_stars, group = afinn_score)) +
+        geom_boxplot() +
+        xlab("AFINN score of word") +
+        ylab("Average rating of reviews with this word")
+
+ggplot(words_afinn, aes(afinn_score, average_stars, size = reviews)) + 
+        geom_smooth(method="lm", se=FALSE, show.legend=FALSE) +
+        geom_text(aes(label = word, size = NULL), check_overlap = TRUE, vjust=1, hjust=1) +
+        geom_point() +
+        scale_x_continuous(limits = c(-6,6)) +
+        xlab("AFINN sentiment score") +
+        ylab("Average Yelp rating")
+
+ggplot(words_afinn, aes(reviews, average_stars, color = afinn_score)) +
+        geom_point() +
+        geom_text(aes(label = word), check_overlap = TRUE, vjust = 1, hjust = 1) +
+        scale_x_log10() +
+        geom_hline(yintercept = mean(tidy_reviews$rating), color = "red", linetype = 2) +
+        scale_colour_gradient2("AFINN", low = "red", mid = "white", high = "blue", limits = c(-5,5)) +
+        xlab("# of reviews") +
+        ylab("Average Rating")
+
+##Repeat above process for all reviews in data set
